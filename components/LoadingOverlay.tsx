@@ -1,0 +1,64 @@
+
+import React, { useState, useEffect } from 'react';
+
+const MESSAGES = [
+  "Synchronizing with neural engine...",
+  "Synthesizing creative storyboards...",
+  "Calibrating cinematic perspectives...",
+  "Rendering high-fidelity narratives...",
+  "Encoding emotional layers...",
+  "Optimizing for short-form retention..."
+];
+
+interface LoadingOverlayProps {
+  isVisible: boolean;
+  stepName?: string;
+}
+
+const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isVisible, stepName }) => {
+  const [msgIdx, setMsgIdx] = useState(0);
+
+  useEffect(() => {
+    if (!isVisible) return;
+    const interval = setInterval(() => {
+      setMsgIdx(prev => (prev + 1) % MESSAGES.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [isVisible]);
+
+  if (!isVisible) return null;
+
+  return (
+    <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-8 transition-opacity duration-500">
+      <div className="relative">
+        <div className="w-24 h-24 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+        <div className="absolute inset-0 flex items-center justify-center text-3xl">🎬</div>
+      </div>
+      
+      <div className="mt-12 text-center max-w-sm">
+        <h3 className="text-2xl font-bold text-white mb-2 uppercase tracking-tighter">
+          {stepName || "Processing"}
+        </h3>
+        <p className="text-blue-400 font-medium h-6 animate-pulse transition-all">
+          {MESSAGES[msgIdx]}
+        </p>
+      </div>
+
+      <div className="mt-8 w-48 h-1 bg-slate-800 rounded-full overflow-hidden">
+        <div className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 animate-progress"></div>
+      </div>
+
+      <style>{`
+        @keyframes progress {
+          0% { width: 0%; }
+          100% { width: 100%; }
+        }
+        .animate-progress {
+          animation: progress 2.5s ease-in-out infinite;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default LoadingOverlay;

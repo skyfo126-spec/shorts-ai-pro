@@ -1,0 +1,7 @@
+{
+  "name": "Shorts AI Studio Pro",
+  "description": "A high-end cinematic production suite for generating short-form video scripts, visualizations, and narrations using Gemini AI.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
