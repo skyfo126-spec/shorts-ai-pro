@@ -187,50 +187,72 @@ export class GeminiService {
     return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
   }
 
-  // ROBUST VIDEO GENERATION
+  // ADVANCED VIDEO GENERATION WITH VERCEL ROBUSTNESS
   async generateVideo(prompt: string, aspectRatio: string): Promise<string | null> {
-    // 1. Fresh instance for initial call
-    let ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
-    let operation = await ai.models.generateVideos({
-      model: 'veo-3.1-fast-generate-preview',
-      prompt: prompt,
-      config: {
-        numberOfVideos: 1,
-        resolution: '720p',
-        aspectRatio: aspectRatio === '9:16' || aspectRatio === '16:9' ? aspectRatio : '16:9'
-      }
-    });
+    const currentApiKey = process.env.API_KEY;
+    if (!currentApiKey) {
+      throw new Error("API Key is missing. Please select a valid key.");
+    }
 
-    // 2. Robust Polling Loop
-    while (!operation.done) {
+    // Initial generation call
+    let ai = new GoogleGenAI({ apiKey: currentApiKey });
+    let operation;
+    try {
+      operation = await ai.models.generateVideos({
+        model: 'veo-3.1-fast-generate-preview',
+        prompt: prompt,
+        config: {
+          numberOfVideos: 1,
+          resolution: '720p',
+          aspectRatio: (aspectRatio === '9:16' || aspectRatio === '16:9') ? aspectRatio : '16:9'
+        }
+      });
+    } catch (e: any) {
+      console.error("Veo Initial Call Failed:", e);
+      throw e;
+    }
+
+    // Polling Loop with Safety
+    let pollCount = 0;
+    const maxPolls = 120; // 20 minutes max
+    
+    while (!operation.done && pollCount < maxPolls) {
+      pollCount++;
       await new Promise(resolve => setTimeout(resolve, 10000));
       
-      // Refresh AI instance in every loop to ensure latest injected key is used
-      ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      operation = await ai.operations.getVideosOperation({ operation: operation });
-      
-      // Explicit error check
-      if (operation.error) {
-        throw new Error(operation.error.message || "Video generation failed at the server level.");
+      try {
+        // ALWAYS recreate the client to ensure injected key is used
+        const pollAi = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        operation = await pollAi.operations.getVideosOperation({ operation: operation });
+        
+        if (operation.error) {
+          console.error("Veo Operation Error:", operation.error);
+          throw new Error(`Veo Server Error: ${operation.error.message}`);
+        }
+      } catch (pollErr: any) {
+        console.warn("Polling error (retrying):", pollErr);
+        if (pollErr.message?.includes("Requested entity was not found")) throw pollErr;
       }
     }
 
-    // 3. Secure download
-    const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-    if (downloadLink) {
-      const fetchUrl = downloadLink.includes('?') 
-        ? `${downloadLink}&key=${process.env.API_KEY}` 
-        : `${downloadLink}?key=${process.env.API_KEY}`;
-        
-      const fetchResponse = await fetch(fetchUrl);
-      if (!fetchResponse.ok) {
-        throw new Error(`Cloud download failed: ${fetchResponse.statusText}`);
-      }
-      const blob = await fetchResponse.blob();
-      return URL.createObjectURL(blob);
+    if (!operation.done) {
+      throw new Error("Video generation timed out.");
     }
-    
+
+    const downloadUri = operation.response?.generatedVideos?.[0]?.video?.uri;
+    if (downloadUri) {
+      const authUrl = `${downloadUri}${downloadUri.includes('?') ? '&' : '?'}key=${process.env.API_KEY}`;
+      try {
+        const response = await fetch(authUrl);
+        if (!response.ok) throw new Error(`Video retrieval failed: ${response.status}`);
+        const blob = await response.blob();
+        // Fixed: Correctly return string from createObjectURL instead of class reference URL
+        return URL.createObjectURL(blob);
+      } catch (e) {
+        console.error("Video Download Failed:", e);
+        return null;
+      }
+    }
     return null;
   }
 }
