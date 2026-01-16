@@ -80,3 +80,23 @@ export function encodeWAV(samples: Int16Array, sampleRate: number = 24000): Blob
 
   return new Blob([view], { type: 'audio/wav' });
 }
+
+/**
+ * Formats seconds into SRT timestamp: HH:MM:SS,mmm
+ */
+export function formatSRTTime(seconds: number): string {
+  const date = new Date(0);
+  date.setMilliseconds(seconds * 1000);
+  const hh = date.getUTCHours().toString().padStart(2, '0');
+  const mm = date.getUTCMinutes().toString().padStart(2, '0');
+  const ss = date.getUTCSeconds().toString().padStart(2, '0');
+  const ms = date.getUTCMilliseconds().toString().padStart(3, '0');
+  return `${hh}:${mm}:${ss},${ms}`;
+}
+
+/**
+ * Creates a single-block SRT content string
+ */
+export function generateSRTContent(text: string, duration: number): string {
+  return `1\n00:00:00,000 --> ${formatSRTTime(duration)}\n${text}\n`;
+}
