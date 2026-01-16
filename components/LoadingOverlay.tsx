@@ -29,22 +29,22 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isVisible, stepName }) 
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-8 transition-opacity duration-500">
+    <div className="fixed inset-0 bg-white/90 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-8 transition-opacity duration-500">
       <div className="relative">
-        <div className="w-24 h-24 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+        <div className="w-24 h-24 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
         <div className="absolute inset-0 flex items-center justify-center text-3xl">🎬</div>
       </div>
       
       <div className="mt-12 text-center max-w-sm">
-        <h3 className="text-2xl font-bold text-white mb-2 uppercase tracking-tighter">
+        <h3 className="text-2xl font-bold text-slate-900 mb-2 uppercase tracking-tighter">
           {stepName || "Processing"}
         </h3>
-        <p className="text-blue-400 font-medium h-6 animate-pulse transition-all">
+        <p className="text-blue-600 font-medium h-6 animate-pulse transition-all">
           {MESSAGES[msgIdx]}
         </p>
       </div>
 
-      <div className="mt-8 w-48 h-1 bg-slate-800 rounded-full overflow-hidden">
+      <div className="mt-8 w-48 h-1 bg-slate-100 rounded-full overflow-hidden">
         <div className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 animate-progress"></div>
       </div>
 

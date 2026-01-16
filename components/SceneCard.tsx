@@ -23,8 +23,8 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, onUpdate, onGenerateImage,
   };
 
   return (
-    <div className="group bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden hover:border-blue-500/50 transition-all duration-300 shadow-xl flex flex-col h-full">
-      <div className="relative aspect-video md:aspect-[9/16] bg-slate-950 overflow-hidden flex items-center justify-center shrink-0">
+    <div className="group bg-white border border-slate-200 rounded-3xl overflow-hidden hover:border-blue-400 transition-all duration-300 shadow-sm flex flex-col h-full hover:shadow-md">
+      <div className="relative aspect-video md:aspect-[9/16] bg-slate-100 overflow-hidden flex items-center justify-center shrink-0">
         {scene.videoUrl ? (
           <video src={scene.videoUrl} className="w-full h-full object-cover" controls autoPlay loop muted />
         ) : scene.imageUrl ? (
@@ -35,14 +35,14 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, onUpdate, onGenerateImage,
             <button
               onClick={() => onGenerateImage(scene.id)}
               disabled={scene.isGeneratingImage}
-              className="px-4 py-2 bg-blue-600 text-white rounded-full text-[10px] font-bold disabled:opacity-50"
+              className="px-4 py-2 bg-blue-600 text-white rounded-full text-[10px] font-bold disabled:opacity-50 hover:bg-blue-700 transition-colors"
             >
               {scene.isGeneratingImage ? '이미지 생성 중...' : '이미지 생성'}
             </button>
           </div>
         )}
         <div className="absolute top-2 left-2 flex gap-1">
-          <span className="bg-slate-950/80 backdrop-blur text-blue-400 text-[10px] font-black px-2 py-0.5 rounded-full border border-blue-500/30">
+          <span className="bg-white/90 backdrop-blur text-blue-600 text-[10px] font-black px-2 py-0.5 rounded-full border border-blue-100 shadow-sm">
             #{scene.id}
           </span>
         </div>
@@ -63,24 +63,24 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, onUpdate, onGenerateImage,
             <input 
               value={scene.title} 
               onChange={e => onUpdate(scene.id, { title: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder="장면 제목"
             />
             <textarea 
               value={scene.narration} 
               onChange={e => onUpdate(scene.id, { narration: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-[10px] text-slate-300 h-24 resize-none"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-[10px] text-slate-700 h-24 resize-none focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder="대본 (자막)"
             />
             <textarea 
               value={scene.visualPrompt} 
               onChange={e => onUpdate(scene.id, { visualPrompt: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-[10px] text-blue-400 h-20 resize-none font-mono"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-[10px] text-blue-600 h-20 resize-none font-mono focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder="이미지 프롬프트"
             />
             <button 
               onClick={() => setIsEditing(false)}
-              className="w-full bg-slate-800 text-white text-[10px] py-2 rounded-lg font-bold"
+              className="w-full bg-slate-900 text-white text-[10px] py-2 rounded-lg font-bold hover:bg-slate-800 transition-colors"
             >
               저장 완료
             </button>
@@ -88,12 +88,12 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, onUpdate, onGenerateImage,
         ) : (
           <div className="flex-1 space-y-2">
             <div className="flex justify-between items-start">
-              <h4 className="text-xs font-bold text-white truncate w-3/4">{scene.title}</h4>
-              <button onClick={() => setIsEditing(true)} className="text-[10px] text-blue-400 hover:underline">수정</button>
+              <h4 className="text-xs font-bold text-slate-900 truncate w-3/4">{scene.title}</h4>
+              <button onClick={() => setIsEditing(true)} className="text-[10px] text-blue-600 hover:underline">수정</button>
             </div>
-            <p className="text-slate-400 text-[10px] leading-relaxed line-clamp-3 italic">"{scene.narration}"</p>
-            <div className="bg-slate-950 p-2 rounded-lg border border-slate-800/50">
-              <p className="text-blue-500/70 text-[9px] font-mono line-clamp-2">{scene.visualPrompt}</p>
+            <p className="text-slate-600 text-[10px] leading-relaxed line-clamp-3 italic">"{scene.narration}"</p>
+            <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+              <p className="text-blue-500 text-[9px] font-mono line-clamp-2">{scene.visualPrompt}</p>
             </div>
           </div>
         )}
@@ -103,7 +103,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, onUpdate, onGenerateImage,
             onClick={handlePlayVoice}
             disabled={!scene.audioBlob || scene.isGeneratingVoice}
             className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-[10px] font-bold transition-all ${
-              scene.audioBlob ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'
+              scene.audioBlob ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md' : 'bg-slate-100 text-slate-400'
             }`}
           >
             🔊 재생
@@ -111,7 +111,7 @@ const SceneCard: React.FC<SceneCardProps> = ({ scene, onUpdate, onGenerateImage,
           <button
             onClick={() => onGenerateVoice(scene.id)}
             disabled={scene.isGeneratingVoice}
-            className="px-3 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-xl hover:bg-blue-600/30 transition-all disabled:opacity-50"
+            className="px-3 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl hover:bg-blue-100 transition-all disabled:opacity-50"
           >
             {scene.isGeneratingVoice ? '...' : '🎙️'}
           </button>
