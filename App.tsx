@@ -162,7 +162,7 @@ const App: React.FC = () => {
     const scene = production.scenes.find(s => s.id === id);
     if (!scene) return;
 
-    // AI Studio Key Check
+    // AI Studio Key Check: Veo 엔진은 유료 키가 반드시 필요함
     if (typeof (window as any).aistudio !== 'undefined') {
       const hasKey = await (window as any).aistudio.hasSelectedApiKey();
       if (!hasKey) {
@@ -172,7 +172,8 @@ const App: React.FC = () => {
 
     setProduction(p => ({ ...p, scenes: p.scenes.map(s => s.id === id ? { ...s, isGeneratingVideo: true } : s) }));
     try {
-      const url = await gemini.generateVideo(scene.visualPrompt, production.aspectRatio);
+      // 이미지 기반 영상 생성을 위해 imageUrl 전달
+      const url = await gemini.generateVideo(scene.visualPrompt, production.aspectRatio, scene.imageUrl);
       setProduction(p => ({ 
         ...p, 
         scenes: p.scenes.map(s => s.id === id ? { ...s, videoUrl: url || undefined, isGeneratingVideo: false } : s) 
@@ -181,12 +182,12 @@ const App: React.FC = () => {
       console.error(`영상 생성 실패 (Scene ${id}):`, e);
       
       if (e.message?.includes("Requested entity was not found") || e.message?.includes("404")) {
-        alert("Veo 모델 접근 권한이 없거나 유료 API 키가 아닙니다. API 키를 다시 선택해주세요.");
+        alert("Veo 모델 접근 권한이 없거나 무료 API 키를 사용 중입니다. 유료 프로젝트의 API 키를 다시 선택해주세요.");
         if (typeof (window as any).aistudio !== 'undefined') {
           await (window as any).aistudio.openSelectKey();
         }
       } else {
-        alert(`영상 생성 중 오류: ${e.message || "알 수 없는 오류"}`);
+        alert(`영상 제작 중 오류가 발생했습니다: ${e.message || "서버 응답 없음"}`);
       }
       
       setProduction(p => ({ ...p, scenes: p.scenes.map(s => s.id === id ? { ...s, isGeneratingVideo: false } : s) }));
@@ -196,7 +197,7 @@ const App: React.FC = () => {
   const handleGenerateAllVideos = async () => {
     const scenesToProcess = production.scenes.filter(s => !s.videoUrl);
     if (scenesToProcess.length === 0) {
-      alert("생성할 영상이 없거나 이미 완료되었습니다.");
+      alert("이미 제작할 영상이 없거나 모두 완료되었습니다.");
       return;
     }
 
@@ -210,7 +211,7 @@ const App: React.FC = () => {
     setIsProcessing(true);
     for (let i = 0; i < scenesToProcess.length; i++) {
       const scene = scenesToProcess[i];
-      setProcessingLabel(`영상 일괄 제작 중... (${i + 1}/${scenesToProcess.length})\n※ Veo 엔진 특성상 수 분이 소요될 수 있습니다.`);
+      setProcessingLabel(`Veo 3.1 영상 일괄 제작 중... (${i + 1}/${scenesToProcess.length})\n※ 영상 하나당 약 1~3분 정도 소요됩니다.`);
       await handleGenerateVideo(scene.id);
     }
     setIsProcessing(false);
@@ -545,7 +546,7 @@ const App: React.FC = () => {
                   onClick={handleGenerateAllVideos}
                   className="px-4 py-2 bg-slate-900 text-white hover:bg-black border border-slate-800 rounded-xl text-[10px] font-bold transition-all shadow-lg"
                 >
-                  🎬 영상 일괄 생성 (Veo)
+                  🎬 영상 일괄 생성 (Veo 3.1)
                 </button>
               </div>
             </div>
