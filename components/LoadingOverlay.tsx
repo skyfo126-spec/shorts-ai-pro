@@ -3,11 +3,13 @@ import React, { useState, useEffect } from 'react';
 
 const MESSAGES = [
   "Synchronizing with neural engine...",
-  "Synthesizing creative storyboards...",
+  "Veo is analyzing visual composition...",
   "Calibrating cinematic perspectives...",
   "Rendering high-fidelity narratives...",
-  "Encoding emotional layers...",
-  "Optimizing for short-form retention..."
+  "Encoding multi-layered visual effects...",
+  "Optimizing frame consistency...",
+  "Applying temporal lighting adjustments...",
+  "Finalizing production buffers..."
 ];
 
 interface LoadingOverlayProps {
@@ -22,7 +24,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isVisible, stepName }) 
     if (!isVisible) return;
     const interval = setInterval(() => {
       setMsgIdx(prev => (prev + 1) % MESSAGES.length);
-    }, 2500);
+    }, 3500); // Slightly slower to allow reading reassuring messages
     return () => clearInterval(interval);
   }, [isVisible]);
 
@@ -39,7 +41,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isVisible, stepName }) 
         <h3 className="text-2xl font-bold text-slate-900 mb-2 uppercase tracking-tighter whitespace-pre-wrap">
           {stepName || "Processing"}
         </h3>
-        <p className="text-blue-600 font-medium h-6 animate-pulse transition-all">
+        <p className="text-blue-600 font-medium h-6 animate-pulse transition-all italic text-sm">
           {MESSAGES[msgIdx]}
         </p>
       </div>
