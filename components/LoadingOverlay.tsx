@@ -23,7 +23,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isVisible, stepName }) 
     if (!isVisible) return;
     const interval = setInterval(() => {
       setMsgIdx(prev => (prev + 1) % MESSAGES.length);
-    }, 3500); // Slightly slower to allow reading reassuring messages
+    }, 3500); 
     return () => clearInterval(interval);
   }, [isVisible]);
 
@@ -32,7 +32,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isVisible, stepName }) 
   return (
     <div className="fixed inset-0 bg-white/90 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-8 transition-opacity duration-500">
       <div className="relative">
-        <div className="w-24 h-24 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+        <div className="w-24 h-24 border-4 border-pink-100 border-t-pink-600 rounded-full animate-spin"></div>
         <div className="absolute inset-0 flex items-center justify-center text-3xl">🎬</div>
       </div>
       
@@ -40,13 +40,13 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isVisible, stepName }) 
         <h3 className="text-2xl font-bold text-slate-900 mb-2 uppercase tracking-tighter whitespace-pre-wrap">
           {stepName || "Processing"}
         </h3>
-        <p className="text-blue-600 font-medium h-6 animate-pulse transition-all italic text-sm">
+        <p className="text-pink-600 font-medium h-6 animate-pulse transition-all italic text-sm">
           {MESSAGES[msgIdx]}
         </p>
       </div>
 
       <div className="mt-8 w-48 h-1 bg-slate-100 rounded-full overflow-hidden">
-        <div className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 animate-progress"></div>
+        <div className="h-full bg-gradient-to-r from-pink-600 to-rose-400 animate-progress"></div>
       </div>
 
       <style>{`
