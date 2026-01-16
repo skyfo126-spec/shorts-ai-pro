@@ -159,16 +159,59 @@ const App: React.FC = () => {
   };
 
   const handleGenerateVideo = async (id: number) => {
+    // Check for API Key selection for Veo models
+    if (typeof (window as any).aistudio !== 'undefined') {
+      const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+      if (!hasKey) {
+        await (window as any).aistudio.openSelectKey();
+        // Assuming success after calling openSelectKey to proceed
+      }
+    }
+
     const scene = production.scenes.find(s => s.id === id);
     if (!scene) return;
     setProduction(p => ({ ...p, scenes: p.scenes.map(s => s.id === id ? { ...s, isGeneratingVideo: true } : s) }));
     try {
       const url = await gemini.generateVideo(scene.visualPrompt, production.aspectRatio);
-      if (url) setProduction(p => ({ ...p, scenes: p.scenes.map(s => s.id === id ? { ...s, videoUrl: url, isGeneratingVideo: false } : s) }));
-      else setProduction(p => ({ ...p, scenes: p.scenes.map(s => s.id === id ? { ...s, isGeneratingVideo: false } : s) }));
-    } catch {
+      if (url) {
+        setProduction(p => ({ ...p, scenes: p.scenes.map(s => s.id === id ? { ...s, videoUrl: url, isGeneratingVideo: false } : s) }));
+      } else {
+        setProduction(p => ({ ...p, scenes: p.scenes.map(s => s.id === id ? { ...s, isGeneratingVideo: false } : s) }));
+      }
+    } catch (e: any) {
+      if (e.message?.includes("Requested entity was not found")) {
+        // Reset key selection if entity not found error occurs
+        if (typeof (window as any).aistudio !== 'undefined') {
+          await (window as any).aistudio.openSelectKey();
+        }
+      }
       setProduction(p => ({ ...p, scenes: p.scenes.map(s => s.id === id ? { ...s, isGeneratingVideo: false } : s) }));
     }
+  };
+
+  const handleGenerateAllVideos = async () => {
+    const scenesToProcess = production.scenes.filter(s => !s.videoUrl);
+    if (scenesToProcess.length === 0) {
+      alert("이미 생성할 영상이 없거나 모두 완료되었습니다.");
+      return;
+    }
+
+    // Check key selection once before batch
+    if (typeof (window as any).aistudio !== 'undefined') {
+      const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+      if (!hasKey) {
+        await (window as any).aistudio.openSelectKey();
+      }
+    }
+
+    setIsProcessing(true);
+    for (let i = 0; i < scenesToProcess.length; i++) {
+      const scene = scenesToProcess[i];
+      setProcessingLabel(`영상 일괄 생성 중 (Veo)... (${i + 1}/${scenesToProcess.length})\n※ 영상 생성은 시간이 다소 소요될 수 있습니다.`);
+      await handleGenerateVideo(scene.id);
+    }
+    setIsProcessing(false);
+    alert("모든 영상 생성이 완료되었습니다.");
   };
 
   const handleUpdateScene = (id: number, updates: Partial<Scene>) => {
@@ -484,6 +527,12 @@ const App: React.FC = () => {
                   className="px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200 rounded-xl text-[10px] font-bold transition-all"
                 >
                   🎙️ 음성 일괄 생성
+                </button>
+                <button 
+                  onClick={handleGenerateAllVideos}
+                  className="px-4 py-2 bg-slate-900 text-white hover:bg-black border border-slate-800 rounded-xl text-[10px] font-bold transition-all shadow-lg"
+                >
+                  🎬 영상 일괄 생성 (Veo)
                 </button>
               </div>
             </div>
