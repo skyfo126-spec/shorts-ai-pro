@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { Scene, Language, ViralAssets, GroundingSource } from "../types";
 
@@ -187,19 +186,18 @@ export class GeminiService {
     return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
   }
 
-  // ADVANCED VIDEO GENERATION WITH VERCEL ROBUSTNESS
+  // ROBUST VIDEO GENERATION FOR VERCEL
   async generateVideo(prompt: string, aspectRatio: string): Promise<string | null> {
+    // 1. 영상 생성 시작 직전에 최신 API 키로 인스턴스 생성
     const currentApiKey = process.env.API_KEY;
-    if (!currentApiKey) {
-      throw new Error("API Key is missing. Please select a valid key.");
-    }
-
-    // Initial generation call
+    if (!currentApiKey) throw new Error("API 키가 없습니다.");
+    
     let ai = new GoogleGenAI({ apiKey: currentApiKey });
     let operation;
+
     try {
       operation = await ai.models.generateVideos({
-        model: 'veo-3.1-fast-generate-preview',
+        model: 'veo-2.0',
         prompt: prompt,
         config: {
           numberOfVideos: 1,
@@ -207,52 +205,47 @@ export class GeminiService {
           aspectRatio: (aspectRatio === '9:16' || aspectRatio === '16:9') ? aspectRatio : '16:9'
         }
       });
-    } catch (e: any) {
-      console.error("Veo Initial Call Failed:", e);
-      throw e;
+    } catch (err: any) {
+      console.error("Veo 초기 요청 실패:", err);
+      throw err;
     }
 
-    // Polling Loop with Safety
+    // 2. 폴링 루프 강화
     let pollCount = 0;
-    const maxPolls = 120; // 20 minutes max
+    const maxPolls = 100; // 약 15분 대기
     
     while (!operation.done && pollCount < maxPolls) {
       pollCount++;
       await new Promise(resolve => setTimeout(resolve, 10000));
       
       try {
-        // ALWAYS recreate the client to ensure injected key is used
+        // 매 폴링마다 키 업데이트를 보장하기 위해 새 인스턴스 사용
         const pollAi = new GoogleGenAI({ apiKey: process.env.API_KEY });
         operation = await pollAi.operations.getVideosOperation({ operation: operation });
         
+        // 서버 측 에러 발생 시 즉시 중단
         if (operation.error) {
-          console.error("Veo Operation Error:", operation.error);
-          throw new Error(`Veo Server Error: ${operation.error.message}`);
+          throw new Error(`Veo 생성 에러: ${operation.error.message}`);
         }
       } catch (pollErr: any) {
-        console.warn("Polling error (retrying):", pollErr);
+        // 네트워크 일시 오류 등은 재시도, 권한 오류 등은 즉시 중단
         if (pollErr.message?.includes("Requested entity was not found")) throw pollErr;
+        console.warn("폴링 재시도 중...", pollErr);
       }
     }
 
-    if (!operation.done) {
-      throw new Error("Video generation timed out.");
-    }
+    if (!operation.done) throw new Error("영상 생성 대기 시간이 초과되었습니다.");
 
+    // 3. 보안 인증된 다운로드
     const downloadUri = operation.response?.generatedVideos?.[0]?.video?.uri;
     if (downloadUri) {
       const authUrl = `${downloadUri}${downloadUri.includes('?') ? '&' : '?'}key=${process.env.API_KEY}`;
-      try {
-        const response = await fetch(authUrl);
-        if (!response.ok) throw new Error(`Video retrieval failed: ${response.status}`);
-        const blob = await response.blob();
-        // Fixed: Correctly return string from createObjectURL instead of class reference URL
-        return URL.createObjectURL(blob);
-      } catch (e) {
-        console.error("Video Download Failed:", e);
-        return null;
-      }
+      const response = await fetch(authUrl);
+      if (!response.ok) throw new Error("영상 파일을 불러오는데 실패했습니다.");
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
     }
+    
     return null;
   }
 }

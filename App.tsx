@@ -162,11 +162,11 @@ const App: React.FC = () => {
     const scene = production.scenes.find(s => s.id === id);
     if (!scene) return;
 
+    // AI Studio Key Check
     if (typeof (window as any).aistudio !== 'undefined') {
       const hasKey = await (window as any).aistudio.hasSelectedApiKey();
       if (!hasKey) {
         await (window as any).aistudio.openSelectKey();
-        // Assume success after prompt
       }
     }
 
@@ -178,14 +178,17 @@ const App: React.FC = () => {
         scenes: p.scenes.map(s => s.id === id ? { ...s, videoUrl: url || undefined, isGeneratingVideo: false } : s) 
       }));
     } catch (e: any) {
-      console.error("Video Generation failed for scene " + id, e);
-      if (e.message?.includes("Requested entity was not found")) {
+      console.error(`영상 생성 실패 (Scene ${id}):`, e);
+      
+      if (e.message?.includes("Requested entity was not found") || e.message?.includes("404")) {
+        alert("Veo 모델 접근 권한이 없거나 유료 API 키가 아닙니다. API 키를 다시 선택해주세요.");
         if (typeof (window as any).aistudio !== 'undefined') {
           await (window as any).aistudio.openSelectKey();
         }
       } else {
-        alert(`영상 생성 중 오류가 발생했습니다 (Scene ${id})`);
+        alert(`영상 생성 중 오류: ${e.message || "알 수 없는 오류"}`);
       }
+      
       setProduction(p => ({ ...p, scenes: p.scenes.map(s => s.id === id ? { ...s, isGeneratingVideo: false } : s) }));
     }
   };
@@ -193,7 +196,7 @@ const App: React.FC = () => {
   const handleGenerateAllVideos = async () => {
     const scenesToProcess = production.scenes.filter(s => !s.videoUrl);
     if (scenesToProcess.length === 0) {
-      alert("이미 생성할 영상이 없거나 모두 완료되었습니다.");
+      alert("생성할 영상이 없거나 이미 완료되었습니다.");
       return;
     }
 
@@ -207,11 +210,11 @@ const App: React.FC = () => {
     setIsProcessing(true);
     for (let i = 0; i < scenesToProcess.length; i++) {
       const scene = scenesToProcess[i];
-      setProcessingLabel(`영상 일괄 생성 중 (Veo)... (${i + 1}/${scenesToProcess.length})\n※ 영상 생성은 수 분이 소요될 수 있습니다.`);
+      setProcessingLabel(`영상 일괄 제작 중... (${i + 1}/${scenesToProcess.length})\n※ Veo 엔진 특성상 수 분이 소요될 수 있습니다.`);
       await handleGenerateVideo(scene.id);
     }
     setIsProcessing(false);
-    alert("모든 영상 생성이 완료되었습니다.");
+    alert("모든 영상 제작이 완료되었습니다.");
   };
 
   const handleUpdateScene = (id: number, updates: Partial<Scene>) => {
@@ -224,7 +227,6 @@ const App: React.FC = () => {
     const zip = new JSZip();
     const folder = zip.folder("production_assets");
     
-    // Core project text files
     folder?.file("full_script.txt", production.scenes.map(s => `[Scene ${s.id}] (${s.title})\n${s.narration}`).join('\n\n'));
     folder?.file("synopsis.txt", production.synopsis);
 
@@ -235,35 +237,29 @@ const App: React.FC = () => {
     for (const scene of production.scenes) {
       const sceneFolder = folder?.folder(`scene_${scene.id}`);
       
-      // Image
       if (scene.imageUrl) {
         const imgData = scene.imageUrl.split(',')[1];
         sceneFolder?.file(`visual_${scene.id}.png`, imgData, { base64: true });
       }
 
-      // Voice & Calculated Duration for Subtitles
-      let duration = scene.narration.length / 15; // Fallback estimate: 15 chars/sec
+      let duration = scene.narration.length / 15;
       if (scene.audioBlob) {
         const audioBytes = decodeBase64(scene.audioBlob);
         const wavBlob = encodeWAV(new Int16Array(audioBytes.buffer));
         sceneFolder?.file(`narration_${scene.id}.wav`, wavBlob);
-        
-        // Accurate duration: (bytes / 2 bytes per sample) / 24000 samples per second
         duration = (audioBytes.length / 2) / 24000;
       }
 
-      // Video
       if (includeVideoInZip && scene.videoUrl) {
           try {
               const videoRes = await fetch(scene.videoUrl);
               const videoBlob = await videoRes.blob();
               sceneFolder?.file(`clip_${scene.id}.mp4`, videoBlob);
           } catch (e) {
-              console.error("Failed to add video to zip", e);
+              console.error("Video Zip Add Failed", e);
           }
       }
 
-      // Subtitles (SRT & TXT) - Newly Added Requirements
       const srtContent = generateSRTContent(scene.narration, duration);
       sceneFolder?.file(`subtitle_${scene.id}.srt`, srtContent);
       sceneFolder?.file(`narration_${scene.id}.txt`, scene.narration);
@@ -273,7 +269,7 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(content);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `shorts_pro_bundle_${Date.now()}.zip`;
+    link.download = `shorts_pro_${Date.now()}.zip`;
     link.click();
     setIsProcessing(false);
   };

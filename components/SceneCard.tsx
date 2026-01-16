@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Scene } from '../types';
 import { decodeBase64, decodeAudioData, playAudioBuffer } from '../utils/audioUtils';

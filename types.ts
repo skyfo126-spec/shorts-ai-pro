@@ -1,4 +1,3 @@
-
 export interface Scene {
   id: number;
   title: string;

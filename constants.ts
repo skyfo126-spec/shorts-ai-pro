@@ -1,4 +1,3 @@
-
 import { Language, AspectRatio } from './types';
 
 export const LANGUAGES = [
